@@ -1,10 +1,11 @@
 #include "raylib.h"
 #include <iostream>
+#include <random>
 #include <vector>
 
 // Starting position
-char board[24] = {2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
-                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2};
+char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
+                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 10, 10};
 Rectangle dice_rects[6] = {
     (Rectangle){2, 42, 12, 12},
     (Rectangle){18, 42, 12, 12},
@@ -62,12 +63,12 @@ class Node {
 };
 
 void roll_dice(int* d1, int* d2) {
-    do {
-        *d1 = rand();
-    } while(*d1 > 5);
-    do {
-        *d2 = rand();
-    } while(*d2 > 5);
+    std::random_device rd;     // Only used once to initialise (seed) engine
+    std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
+    std::uniform_int_distribution<int> uni(0, 5); // Guaranteed unbiased
+
+    *d1 = uni(rng);
+    *d2 = uni(rng);
 }
 
 void write_binary(void* c, int size) {
@@ -82,7 +83,7 @@ int main()
 {
     srand(time(NULL));
     
-    InitWindow(512, 512, "Backgammon");
+    InitWindow(640, 512, "Backgammon");
 
     SetTargetFPS(60);
     
@@ -97,11 +98,11 @@ int main()
         
         if(IsMouseButtonPressed(0)) {
             int m_x = GetMouseX(), m_y = GetMouseY();
-            if(m_x > 200 && m_x < 248 && m_y > 28 && m_y < 76) {
+            if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&d1, &d2);
             }
-            else if(m_x > 268 && m_x < 316 && m_y > 28 && m_y < 76) {
+            else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&d1, &d2);
             }
@@ -116,10 +117,10 @@ int main()
             ClearBackground(RAYWHITE);
             
             // background
-            DrawTexturePro(spritesheet, (Rectangle){48, 0, 128, 128}, (Rectangle){0, 0, 512, 512}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+            DrawTexturePro(spritesheet, (Rectangle){48, 0, 160, 128}, (Rectangle){0, 0, 640, 512}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
             
-            DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){200, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-            DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){268, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+            DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+            DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
             
             // draw pieces
             draw_pieces(spritesheet);
@@ -132,20 +133,35 @@ int main()
 }
 
 void draw_pieces(Texture2D sheet) {
-    for(int i = 1; i <= 24; i++) {
-        if(board[i-1] != 0) {
+    for(int i = 0; i <= 25; i++) {
+        if(board[i] != 0) {
             switch(i) {
+                case 0:
+                    if(abs((int)board[i]) > 5) {
+                        for(int j = 0; j < 5; j++) {
+                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)236, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                        for(int j = 0; j < abs(board[i]) - 5; j++) {
+                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)268, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                    }
+                    else {
+                        for(int j = 0; j < abs(board[i]); j++) {
+                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)236, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                    } // normal variation
+                    break;
                 case 1:
                 case 2:
                 case 3:
                 case 4:
                 case 5:
                 case 6:
-                    for(int j = 0; j < abs(board[i-1]); j++) {
-                        if((int)board[i-1] > 0) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(288 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                    for(int j = 0; j < abs(board[i]); j++) {
+                        if((int)board[i] > 0) {
+                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(288 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
                     break;
                 case 7:
@@ -154,8 +170,8 @@ void draw_pieces(Texture2D sheet) {
                 case 10:
                 case 11:
                 case 12:
-                    for(int j = 0; j < abs(board[i-1]); j++) {
-                        if((int)board[i-1] > 0) {
+                    for(int j = 0; j < abs(board[i]); j++) {
+                        if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
@@ -167,8 +183,8 @@ void draw_pieces(Texture2D sheet) {
                 case 16:
                 case 17:
                 case 18:
-                    for(int j = 0; j < abs(board[i-1]); j++) {
-                        if((int)board[i-1] > 0) {
+                    for(int j = 0; j < abs(board[i]); j++) {
+                        if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(32 + (i - 13) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(32 + (i - 13) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
@@ -180,12 +196,32 @@ void draw_pieces(Texture2D sheet) {
                 case 22:
                 case 23:
                 case 24:
-                    for(int j = 0; j < abs(board[i-1]); j++) {
-                        if((int)board[i-1] > 0) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(288 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                    for(int j = 0; j < abs(board[i]); j++) {
+                        if((int)board[i] > 0) {
+                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(288 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
+                    break;
+                case 25:
+                    if(abs((int)board[i]) > 5) {
+                        for(int j = 0; j < 5; j++) {
+                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)236, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                        for(int j = 0; j < abs(board[i]) - 5; j++) {
+                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)268, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                    }
+                    else {
+                        for(int j = 0; j < abs(board[i]); j++) {
+                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)236, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                        }
+                    } // normal variation
+                    break;
+                case 26:
+                    
+                    break;
+                case 27:
                     break;
             }
         }
