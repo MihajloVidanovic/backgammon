@@ -73,9 +73,15 @@ void roll_dice(int* d1, int* d2) {
 }
 
 void write_binary(void* c, int size) {
-    void* cho_gath = malloc(size);
+    char* ptr = (char*)c;
+    char temp;
+    for(int i = 0; i < size; i++) {
+        temp = ptr[i];
+        for(int j = 0; j < 8; j++) {
+            std::cout << ((temp >> j) & 1);
+        }
+    }
     std::cout << std::endl;
-    free(cho_gath);
 }
 
 void draw_pieces(Texture2D sheet);
@@ -91,7 +97,8 @@ int main()
     Texture2D spritesheet = LoadTexture("assets/spritesheet.png");
     
     char dice = (char)0;
-    
+    int test = 5000;
+    write_binary((void*)&test, sizeof(test));
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
