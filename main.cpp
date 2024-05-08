@@ -16,12 +16,17 @@ Rectangle dice_rects[6] = {
     (Rectangle){18, 74, 12, 12},
 };
 
+typedef struct Move {
+
+} Move;
+
 class Node {
 
     private:
         Node* parent;
         std::vector<Node> children;
         float eval;
+        Move move;
 
     public:
         Node() { }
@@ -72,13 +77,27 @@ void roll_dice(int* d1, int* d2) {
     *d2 = uni(rng);
 }
 
-void write_binary(void* c, int size) {
-    char* ptr = (char*)c;
+bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
+    char* ptr = (char*)_ptr;
+    char temp = ptr[_pos/8];
+    return (temp >> (_pos % 8)) & 1;
+}
+
+int get_binary_number(void* _ptr, int _pos, int _size) { // _size and _pos in bits
+    // work in progress
+}
+
+void write_binary(void* cho_gath, int size) {
+    char* ptr = (char*)cho_gath;
     char temp;
+    bool temp1[8];
     for(int i = 0; i < size; i++) {
-        temp = ptr[i];
+        temp = ptr[size - i - 1];
         for(int j = 0; j < 8; j++) {
-            std::cout << ((temp >> j) & 1);
+            temp1[j] = ((temp >> j) & 1);
+        }
+        for(int j = 0; j < 8; j++) {
+            std::cout << temp1[7-j];
         }
     }
     std::cout << std::endl;
