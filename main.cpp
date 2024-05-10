@@ -118,8 +118,11 @@ int main()
     char dice = (char)0;
     int test = 5000;
     write_binary((void*)&test, sizeof(test));
+    char selected = (char)0;
     
     int d1 = rand() % 6, d2 = rand() % 6;
+    
+    printf("%d\n", sizeof(Rectangle));
     
     while(!WindowShouldClose()) {
         
@@ -132,6 +135,15 @@ int main()
             else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&d1, &d2);
+            }
+            if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
+                if(m_y < 288) {
+                    // 13-18
+                    selected = (m_x - 32) / 32 + 13; // :thumbs_up:
+                }
+                else {
+                    // 12-7
+                }
             }
         }
         if(IsKeyPressed(KEY_SPACE)) {
