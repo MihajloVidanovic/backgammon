@@ -24,9 +24,12 @@ class Node {
 
     private:
         Node* parent;
-        std::vector<Node> children;
+        Node* children;
+        unsigned char children_size;
         float eval;
-        Move move;
+        unsigned char dice_roll;
+        unsigned char* moves;
+        unsigned char moves_size;
 
     public:
         Node() { }
@@ -35,12 +38,12 @@ class Node {
         }
         
         int get_children_size() {
-            return children.size();
+            return children_size;
         }
-        Node get_child(int index) {
-            return children.at(index);
+        Node* get_child(int index) {
+            return children + index;
         }
-        void make_child() {
+        /*void make_child() {
             children.resize(children.size() + 1); // new child always at end
             children[children.size()-1].parent = this;
         }
@@ -53,7 +56,7 @@ class Node {
 
         void set_parent(Node* _parent) {
             parent = _parent;
-        }
+        }*/
         Node* get_parent() {
             return parent;
         }
@@ -146,7 +149,16 @@ int main()
                     selected = 12 - (m_x - 32) / 32;
                 }
             }
-            else if()
+            else if(504 < m_x && m_x < 696 && 116 < m_y && m_y < 464) {
+                if(m_y < 288) {
+                    selected = 19 + (m_x - 32) / 32;
+                    std::cout << (int)selected << std::endl;
+                }
+                else {
+                    selected = 6 - (m_x - 32) / 32;
+                    std::cout << (int)selected << std::endl;
+                }
+            }
         }
         if(IsKeyPressed(KEY_SPACE)) {
             // d1 = rand() % 6, d2 = rand() % 6; // roll dice
