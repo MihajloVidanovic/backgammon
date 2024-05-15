@@ -2,6 +2,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <chrono>
 
 // Starting position
 char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
@@ -86,12 +87,27 @@ bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
     return (temp >> (_pos % 8)) & 1;
 }
 
-int get_binary_number(void* _ptr, int _pos, int _size) { // _size and _pos in bits
-    // work in progress
+int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size and _pos in bits
+    if(_signed) {
+        long long intv = 0;
+        for(int i = 0; i < _size; i++) { // TODO: make this faster
+            intv <<= 1;
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
+        }
+        return intv;
+    }
+    else {
+        unsigned long long intv = 0;
+        for(int i = 0; i < _size; i++) { // TODO: make this faster
+            intv <<= 1;
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
+        }
+        return intv;
+    }
 }
 
-void write_binary(void* cho_gath, int size) {
-    char* ptr = (char*)cho_gath;
+void write_binary(void* _ptr, int size) {
+    char* ptr = (char*)_ptr;
     char temp;
     bool temp1[8];
     for(int i = 0; i < size; i++) {
@@ -122,6 +138,14 @@ int main()
     int test = 5000;
     // write_binary((void*)&test, sizeof(test));
     char selected = (char)0;
+    
+    unsigned long long binary_test = 18446744073709551615;
+    unsigned long long binary_test_r;
+    auto start = std::chrono::high_resolution_clock::now();
+    binary_test_r = get_binary_number((void*)&binary_test, 0, 64, false);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+    std::cout << binary_test_r << std::endl;
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
