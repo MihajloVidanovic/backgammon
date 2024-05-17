@@ -17,20 +17,27 @@ Rectangle dice_rects[6] = {
     (Rectangle){18, 74, 12, 12},
 };
 
-typedef struct Move {
-
-} Move;
+class Move {
+    public:
+        unsigned char data;
+        
+        void write_move() {
+            
+        }
+        void read_move() {
+            
+        }
+};
 
 class Node {
 
     private:
         Node* parent;
-        Node* children;
-        unsigned char children_size;
+        std::vector<Node*> children;
+        std::vector<Move> moves;
         float eval;
         unsigned char dice_roll;
-        unsigned char* moves;
-        unsigned char moves_size;
+        unsigned char depth;
 
     public:
         Node() { }
@@ -39,10 +46,10 @@ class Node {
         }
         
         int get_children_size() {
-            return children_size;
+            return children.size();
         }
         Node* get_child(int index) {
-            return children + index;
+            return children[index];
         }
         /*void make_child() {
             children.resize(children.size() + 1); // new child always at end
@@ -87,20 +94,30 @@ bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
     return (temp >> (_pos % 8)) & 1;
 }
 
+bool get_binary_digit(void* _ptr, int _pos, char** alloc_ptr, char* alloc_temp) { // _pos in bits
+    *alloc_ptr = (char*)_ptr;
+    *alloc_temp = *alloc_ptr[_pos/8];
+    return (*alloc_temp >> (_pos % 8)) & 1;
+}
+
 int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size and _pos in bits
     if(_signed) {
         long long intv = 0;
+        char* ptr;
+        char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
-            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1, &ptr, &temp);
         }
         return intv;
     }
     else {
         unsigned long long intv = 0;
+        char* ptr;
+        char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
-            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1, &ptr, &temp);
         }
         return intv;
     }
@@ -141,10 +158,7 @@ int main()
     
     unsigned long long binary_test = 18446744073709551615;
     unsigned long long binary_test_r;
-    auto start = std::chrono::high_resolution_clock::now();
     binary_test_r = get_binary_number((void*)&binary_test, 0, 64, false);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     std::cout << binary_test_r << std::endl;
     
     int d1 = rand() % 6, d2 = rand() % 6;
