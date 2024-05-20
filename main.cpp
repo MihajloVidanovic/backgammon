@@ -94,12 +94,6 @@ bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
     return (temp >> (_pos % 8)) & 1;
 }
 
-bool get_binary_digit(void* _ptr, int _pos, char** alloc_ptr, char* alloc_temp) { // _pos in bits
-    *alloc_ptr = (char*)_ptr;
-    *alloc_temp = *alloc_ptr[_pos/8];
-    return (*alloc_temp >> (_pos % 8)) & 1;
-}
-
 int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size and _pos in bits
     if(_signed) {
         long long intv = 0;
@@ -107,7 +101,7 @@ int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size 
         char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
-            intv += get_binary_digit(_ptr, _pos + _size - i - 1, &ptr, &temp);
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
         }
         return intv;
     }
@@ -117,7 +111,7 @@ int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size 
         char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
-            intv += get_binary_digit(_ptr, _pos + _size - i - 1, &ptr, &temp);
+            intv += get_binary_digit(_ptr, _pos + _size - i - 1);
         }
         return intv;
     }
@@ -139,7 +133,7 @@ void write_binary(void* _ptr, int size) {
     std::cout << std::endl;
 }
 
-void draw_pieces(Texture2D sheet);
+void draw_pieces(Texture2D sheet, char selected);
 
 int main()
 {
@@ -187,14 +181,12 @@ int main()
                     selected = 12 - (m_x - 32) / 32;
                 }
             }
-            else if(504 < m_x && m_x < 696 && 116 < m_y && m_y < 464) {
+            else if(312 < m_x && m_x < 504 && 116 < m_y && m_y < 464) {
                 if(m_y < 288) {
-                    selected = 19 + (m_x - 32) / 32;
-                    std::cout << (int)selected << std::endl;
+                    selected = 19 + (m_x - 312) / 32;
                 }
                 else {
-                    selected = 6 - (m_x - 32) / 32;
-                    std::cout << (int)selected << std::endl;
+                    selected = 6 - (m_x - 312) / 32;
                 }
             }
         }
@@ -214,7 +206,7 @@ int main()
             DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
             
             // draw pieces
-            draw_pieces(spritesheet);
+            draw_pieces(spritesheet, selected);
             
             
         
@@ -225,7 +217,7 @@ int main()
     return 0;
 }
 
-void draw_pieces(Texture2D sheet) {
+void draw_pieces(Texture2D sheet, char selected) {
     for(int i = 0; i <= 27; i++) {
         if(board[i] != 0) {
             switch(i) {
@@ -255,6 +247,9 @@ void draw_pieces(Texture2D sheet) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                    }
+                    if((int)selected == i && abs(board[i] > 0)) {
+                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 128});
                     }
                     break;
                 case 7:
