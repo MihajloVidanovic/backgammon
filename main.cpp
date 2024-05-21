@@ -248,8 +248,8 @@ void draw_pieces(Texture2D sheet, char selected) {
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
-                    if((int)selected == i && abs(board[i] > 0)) {
-                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 128});
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
                     }
                     break;
                 case 7:
