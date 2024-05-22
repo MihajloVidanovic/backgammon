@@ -5,7 +5,7 @@
 #include <chrono>
 
 // Starting position
-char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
+char board[28] = {0, 2, 1, 1, 1, 1, -5, 0, -3, 0, 0, 0, 5, 
                  -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
@@ -17,15 +17,45 @@ Rectangle dice_rects[6] = {
     (Rectangle){18, 74, 12, 12},
 };
 
-class Move {
+typedef struct Vector2i {
+    int x;
+    int y;
+} Vector2i;
+
+class DiceThrow {
     public:
         unsigned char data;
+        // bits 0-2: starting position
+        // bits 3-5: ending position
+        // bit 6: whether a piece has been taken
+        // bit 7: what player is making the move, 0 for black 1 for white
         
-        void write_move() {
-            
+        void write_throw(char start, char end, bool taken, bool player) {
+            for(int i = 0; i < 4; i++) {
+                data += start & 1;
+                data <<= 1;
+                start >>= 1;
+            }
+            for(int i = 0; i < 4; i++) {
+                data += start & 1;
+                data <<= 1;
+                start >>= 1;
+            }
         }
-        void read_move() {
-            
+        void read_move(char* start, char* end, bool* taken, bool* player) {
+            for(int i = 0; i < 4; i++) {
+                *end += tmp & 1;
+                *end <<= 1;
+                tmp >>= 1;
+            }
+            for(int i = 0; i < 4; i++) {
+                *start += tmp & 1;
+                *start <<= 1;
+                tmp >>= 1;
+            }
+        }
+        void execute_move() {
+            // TODO;
         }
 };
 
@@ -146,14 +176,10 @@ int main()
     Texture2D spritesheet = LoadTexture("assets/spritesheet.png");
     
     char dice = (char)0;
-    int test = 5000;
-    // write_binary((void*)&test, sizeof(test));
-    char selected = (char)0;
+    char selected = (char)0, p_selected = (char)-1;
     
-    unsigned long long binary_test = 18446744073709551615;
-    unsigned long long binary_test_r;
-    binary_test_r = get_binary_number((void*)&binary_test, 0, 64, false);
-    std::cout << binary_test_r << std::endl;
+    Move test_move;
+    test_move.write_move((char));
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
@@ -171,6 +197,9 @@ int main()
             }
             
             // move selection
+            if(p_selected != (char)-1) {
+                p_selected = selected;
+            }
             if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
                 if(m_y < 288) {
                     // 13-18
@@ -189,6 +218,11 @@ int main()
                     selected = 6 - (m_x - 312) / 32;
                 }
             }
+            if(p_selected == selected && p_selected != (char)-1) {
+                selected = (char)-1;
+                p_selected = selected;
+            }
+            p_selected = selected;
         }
         if(IsKeyPressed(KEY_SPACE)) {
             // d1 = rand() % 6, d2 = rand() % 6; // roll dice
