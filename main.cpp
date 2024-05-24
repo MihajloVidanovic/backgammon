@@ -5,7 +5,7 @@
 #include <chrono>
 
 // Starting position
-char board[28] = {0, 2, 1, 1, 1, 1, -5, 0, -3, 0, 0, 0, 5, 
+char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
                  -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
@@ -22,15 +22,15 @@ typedef struct Vector2i {
     int y;
 } Vector2i;
 
-class DiceThrow {
+class Move {
     public:
-        unsigned char data;
-        // bits 0-2: starting position
-        // bits 3-5: ending position
-        // bit 6: whether a piece has been taken
-        // bit 7: what player is making the move, 0 for black 1 for white
+        unsigned short data;
+        // bits 0-3: starting position
+        // bits 4-7: ending position
+        // bit 8: whether a piece has been taken
+        // bit 9: what player is making the move, 0 for black 1 for white
         
-        void write_throw(char start, char end, bool taken, bool player) {
+        void write_move(char start, char end, bool taken, bool player) {
             for(int i = 0; i < 4; i++) {
                 data += start & 1;
                 data <<= 1;
@@ -41,8 +41,16 @@ class DiceThrow {
                 data <<= 1;
                 start >>= 1;
             }
+            data += (taken) ? 1 : 0;
+            data <<= 1;
+            data += (player) ? 1 : 0;
         }
         void read_move(char* start, char* end, bool* taken, bool* player) {
+            unsigned short tmp = data;
+            *player = (tmp & 1) ? true : false;
+            tmp >>= 1;
+            *taken = (tmp & 1) ? true : false;
+            tmp >>= 1;
             for(int i = 0; i < 4; i++) {
                 *end += tmp & 1;
                 *end <<= 1;
@@ -54,10 +62,55 @@ class DiceThrow {
                 tmp >>= 1;
             }
         }
-        void execute_move() {
-            // TODO;
-        }
 };
+
+int sign(char c) {
+    if(c < 0) {
+        return -1;
+    }
+    return 1;
+}
+
+void execute_move(Move _move) {
+    char start, end;
+    bool taken, player;
+    _move.read_move(&start, &end, &taken, &player);
+    if(board[(int)end] == 0) {
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
+        if(sign(board[(int)end]) == -1) {
+            board[25]--;
+        }
+        else { // 1
+            board[0]++;
+        }
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+}
+
+void execute_move(char start, char end, bool player) {
+    if(board[(int)end] == 0) {
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
+        if(sign(board[(int)end]) == -1) {
+            board[25]--;
+        }
+        else { // 1
+            board[0]++;
+        }
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+}
+
+void undo_move() {
+    // TODO
+}
 
 class Node {
 
@@ -127,8 +180,6 @@ bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
 int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size and _pos in bits
     if(_signed) {
         long long intv = 0;
-        char* ptr;
-        char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
             intv += get_binary_digit(_ptr, _pos + _size - i - 1);
@@ -137,8 +188,6 @@ int get_binary_number(void* _ptr, int _pos, int _size, bool _signed) { // _size 
     }
     else {
         unsigned long long intv = 0;
-        char* ptr;
-        char temp;
         for(int i = 0; i < _size; i++) { // TODO: make this faster
             intv <<= 1;
             intv += get_binary_digit(_ptr, _pos + _size - i - 1);
@@ -175,11 +224,13 @@ int main()
     
     Texture2D spritesheet = LoadTexture("assets/spritesheet.png");
     
-    char dice = (char)0;
+    // char dice = (char)0; TODO
+    
     char selected = (char)0, p_selected = (char)-1;
     
+    bool player_side = true;
     Move test_move;
-    test_move.write_move((char));
+    test_move.write_move((char)0, (char)5, false, true);
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
@@ -203,24 +254,35 @@ int main()
             if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
                 if(m_y < 288) {
                     // 13-18
-                    selected = (m_x - 32) / 32 + 13; // :thumbs_up:
+                    if(board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        selected = (m_x - 32) / 32 + 13; // :thumbs_up:
+                    }
                 }
                 else {
                     // 12-7
-                    selected = 12 - (m_x - 32) / 32;
+                    if(board[12 - (m_x - 32) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        selected = 12 - (m_x - 32) / 32;
+                    }
                 }
             }
             else if(312 < m_x && m_x < 504 && 116 < m_y && m_y < 464) {
                 if(m_y < 288) {
-                    selected = 19 + (m_x - 312) / 32;
+                    if(board[19 + (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        selected = 19 + (m_x - 312) / 32;
+                    }
                 }
                 else {
-                    selected = 6 - (m_x - 312) / 32;
+                    if(board[6 - (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        selected = 6 - (m_x - 312) / 32;
+                    }
                 }
             }
             if(p_selected == selected && p_selected != (char)-1) {
                 selected = (char)-1;
                 p_selected = selected;
+            }
+            else if(p_selected != (char)-1 && p_selected != selected) {
+                // execute_move(char );
             }
             p_selected = selected;
         }
@@ -298,6 +360,9 @@ void draw_pieces(Texture2D sheet, char selected) {
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                    }
                     break;
                 case 13:
                 case 14:
@@ -311,6 +376,9 @@ void draw_pieces(Texture2D sheet, char selected) {
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(32 + (i - 13) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)(32 + abs(i - 13) * 32), (float)(116 + (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                    }
                     break;
                 case 19:
                 case 20:
@@ -323,6 +391,9 @@ void draw_pieces(Texture2D sheet, char selected) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + (i - 19) * 32), (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                    }
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 19) * 32), (float)(116 + (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
                     }
                     break;
                 case 25:
