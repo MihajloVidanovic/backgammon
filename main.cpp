@@ -4,6 +4,12 @@
 #include <vector>
 #include <chrono>
 
+typedef enum Mode { 
+    player_move = 0, computer_thinking = 1, computer_move = 2, title_screen = 3, paused = 4, first_dice_throw = 5
+} Mode;
+
+const Color bg_color = (Color){78, 40, 46, 255};
+
 // Starting position
 char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
                  -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
@@ -228,85 +234,94 @@ int main()
     
     char selected = (char)0, p_selected = (char)-1;
     
-    bool player_side = true;
+    bool player_side = false;
     Move test_move;
     test_move.write_move((char)0, (char)5, false, true);
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
+    Mode m = first_dice_throw;
+    
     while(!WindowShouldClose()) {
-        
-        if(IsMouseButtonPressed(0)) {
-            int m_x = GetMouseX(), m_y = GetMouseY();
-            if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76) {
+        if(m == player_move) {
+            if(IsMouseButtonPressed(0)) {
+                int m_x = GetMouseX(), m_y = GetMouseY();
+                if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76) {
+                    // d1 = rand() % 6, d2 = rand() % 6; // roll dice
+                    roll_dice(&d1, &d2);
+                }
+                else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76) {
+                    // d1 = rand() % 6, d2 = rand() % 6; // roll dice
+                    roll_dice(&d1, &d2);
+                }
+                
+                // move selection
+                if(p_selected != (char)-1) {
+                    p_selected = selected;
+                }
+                if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
+                    if(m_y < 288) {
+                        // 13-18
+                        if(board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                            selected = (m_x - 32) / 32 + 13; // :thumbs_up:
+                        }
+                    }
+                    else {
+                        // 12-7
+                        if(board[12 - (m_x - 32) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                            selected = 12 - (m_x - 32) / 32;
+                        }
+                    }
+                }
+                else if(312 < m_x && m_x < 504 && 116 < m_y && m_y < 464) {
+                    if(m_y < 288) {
+                        if(board[19 + (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                            selected = 19 + (m_x - 312) / 32;
+                        }
+                    }
+                    else {
+                        if(board[6 - (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                            selected = 6 - (m_x - 312) / 32;
+                        }
+                    }
+                }
+                if(p_selected == selected && p_selected != (char)-1) {
+                    selected = (char)-1;
+                    p_selected = selected;
+                }
+                else if(p_selected != (char)-1 && p_selected != selected) {
+                    // execute_move(char );
+                }
+                p_selected = selected;
+            }
+            if(IsKeyPressed(KEY_SPACE)) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&d1, &d2);
             }
-            else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76) {
-                // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-                roll_dice(&d1, &d2);
-            }
             
-            // move selection
-            if(p_selected != (char)-1) {
-                p_selected = selected;
-            }
-            if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
-                if(m_y < 288) {
-                    // 13-18
-                    if(board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
-                        selected = (m_x - 32) / 32 + 13; // :thumbs_up:
-                    }
-                }
-                else {
-                    // 12-7
-                    if(board[12 - (m_x - 32) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
-                        selected = 12 - (m_x - 32) / 32;
-                    }
-                }
-            }
-            else if(312 < m_x && m_x < 504 && 116 < m_y && m_y < 464) {
-                if(m_y < 288) {
-                    if(board[19 + (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
-                        selected = 19 + (m_x - 312) / 32;
-                    }
-                }
-                else {
-                    if(board[6 - (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
-                        selected = 6 - (m_x - 312) / 32;
-                    }
-                }
-            }
-            if(p_selected == selected && p_selected != (char)-1) {
-                selected = (char)-1;
-                p_selected = selected;
-            }
-            else if(p_selected != (char)-1 && p_selected != selected) {
-                // execute_move(char );
-            }
-            p_selected = selected;
+            BeginDrawing();
+            
+                ClearBackground(RAYWHITE);
+                
+                // background
+                DrawTexturePro(spritesheet, (Rectangle){48, 0, 160, 128}, (Rectangle){0, 0, 640, 512}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                
+                DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                
+                // draw pieces
+                draw_pieces(spritesheet, selected);
+            
+            EndDrawing();
         }
-        if(IsKeyPressed(KEY_SPACE)) {
-            // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-            roll_dice(&d1, &d2);
+        else if(m == first_dice_throw) {
+            
+            BeginDrawing();
+                
+                ClearBackground(bg_color);
+                
+            EndDrawing();
         }
-        
-        BeginDrawing();
-        
-            ClearBackground(RAYWHITE);
-            
-            // background
-            DrawTexturePro(spritesheet, (Rectangle){48, 0, 160, 128}, (Rectangle){0, 0, 640, 512}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-            
-            DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-            DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-            
-            // draw pieces
-            draw_pieces(spritesheet, selected);
-            
-            
-        
-        EndDrawing();
     }
     
     CloseWindow();
