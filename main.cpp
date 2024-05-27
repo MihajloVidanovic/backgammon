@@ -288,9 +288,10 @@ int main()
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
-                    execute_move(p_selected, selected, player_side);
-                    player_side = !player_side;
-                    selected = (char)-1;
+                    if(execute_move(p_selected, selected, player_side)) {
+                        player_side = !player_side;
+                        selected = (char)-1;
+                    }
                 }
                 p_selected = selected;
             }
