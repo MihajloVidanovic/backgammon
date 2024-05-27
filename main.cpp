@@ -70,54 +70,6 @@ class Move {
         }
 };
 
-int sign(char c) {
-    if(c < 0) {
-        return -1;
-    }
-    return 1;
-}
-
-void execute_move(Move _move) {
-    char start, end;
-    bool taken, player;
-    _move.read_move(&start, &end, &taken, &player);
-    if(board[(int)end] == 0) {
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
-        if(sign(board[(int)end]) == -1) {
-            board[25]--;
-        }
-        else { // 1
-            board[0]++;
-        }
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-}
-
-void execute_move(char start, char end, bool player) {
-    if(board[(int)end] == 0) {
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
-        if(sign(board[(int)end]) == -1) {
-            board[25]--;
-        }
-        else { // 1
-            board[0]++;
-        }
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-}
-
-void undo_move() {
-    // TODO
-}
-
 class Node {
 
     private:
@@ -167,6 +119,57 @@ class Node {
 
 
 };
+
+int sign(char c) {
+    if(c < 0) {
+        return -1;
+    }
+    return 1;
+}
+
+void execute_move(Move _move) {
+    char start, end;
+    bool taken, player;
+    _move.read_move(&start, &end, &taken, &player);
+    if(board[(int)end] == 0) {
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
+        if(sign(board[(int)end]) == -1) {
+            board[25]--;
+        }
+        else { // 1
+            board[0]++;
+        }
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+}
+
+bool execute_move(char start, char end, bool player) {
+    if(board[(int)start] != 0) {
+        return false;
+    }
+    if(board[(int)end] == 0) {
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
+        if(sign(board[(int)end]) == -1) {
+            board[25]--;
+        }
+        else { // 1
+            board[0]++;
+        }
+        board[(int)end] = (player) ? 1 : -1;
+        board[(int)start] -= (player) ? 1 : -1;
+    }
+}
+
+void undo_move() {
+    // TODO
+}
 
 void roll_dice(int* d1, int* d2) {
     std::random_device rd;     // Only used once to initialise (seed) engine
@@ -230,17 +233,13 @@ int main()
     
     Texture2D spritesheet = LoadTexture("assets/spritesheet.png");
     
-    // char dice = (char)0; TODO
-    
     char selected = (char)0, p_selected = (char)-1;
     
     bool player_side = false;
-    Move test_move;
-    test_move.write_move((char)0, (char)5, false, true);
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
-    Mode m = first_dice_throw;
+    Mode m = player_move;
     
     while(!WindowShouldClose()) {
         if(m == player_move) {
@@ -262,35 +261,36 @@ int main()
                 if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
                     if(m_y < 288) {
                         // 13-18
-                        if(board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        if((board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= 0) || p_selected != (char)-1) {
                             selected = (m_x - 32) / 32 + 13; // :thumbs_up:
                         }
                     }
                     else {
                         // 12-7
-                        if(board[12 - (m_x - 32) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        if((board[12 - (m_x - 32) / 32] * ((player_side) ? 1 : -1) >= 0) || p_selected != (char)-1) {
                             selected = 12 - (m_x - 32) / 32;
                         }
                     }
                 }
                 else if(312 < m_x && m_x < 504 && 116 < m_y && m_y < 464) {
                     if(m_y < 288) {
-                        if(board[19 + (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        if((board[19 + (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= 0) || p_selected != (char)-1) {
                             selected = 19 + (m_x - 312) / 32;
                         }
                     }
                     else {
-                        if(board[6 - (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= ((player_side) ? 1 : -1)) {
+                        if((board[6 - (m_x - 312) / 32] * ((player_side) ? 1 : -1) >= 0) || p_selected != (char)-1) {
                             selected = 6 - (m_x - 312) / 32;
                         }
                     }
                 }
-                if(p_selected == selected && p_selected != (char)-1) {
+                if(p_selected == selected && p_selected != (char)-1) { // clicked out of bounds
                     selected = (char)-1;
-                    p_selected = selected;
                 }
-                else if(p_selected != (char)-1 && p_selected != selected) {
-                    // execute_move(char );
+                else if(p_selected != (char)-1 && p_selected != selected) { // move
+                    execute_move(p_selected, selected, player_side);
+                    player_side = !player_side;
+                    selected = (char)-1;
                 }
                 p_selected = selected;
             }
