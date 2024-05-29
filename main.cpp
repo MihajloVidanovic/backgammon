@@ -148,23 +148,29 @@ void execute_move(Move _move) {
 }
 
 bool execute_move(char start, char end, bool player) {
-    if(board[(int)start] != 0) {
-        return false;
-    }
-    if(board[(int)end] == 0) {
-        board[(int)end] = (player) ? 1 : -1;
+    if(board[(int)start] == 0) { return false; }
+    
+    // normal variation
+    if((board[(int)end] == 0) || (sign(board[(int)end]) == ((player) ? 1 : -1))) {
+        board[(int)end] += (player) ? 1 : -1;
         board[(int)start] -= (player) ? 1 : -1;
     }
-    else if(sign(board[(int)end]) != (player) ? 1 : -1) {
-        if(sign(board[(int)end]) == -1) {
+    // there is an element at the end
+    else if(sign(board[(int)end]) != ((player) ? 1 : -1)) {
+        if(abs(board[(int)end]) > 1) {
+            return false;
+        }
+
+        if(sign(board[(int)end]) == -1) { // send to bar
             board[25]--;
         }
-        else { // 1
+        else { // 1 send to bar
             board[0]++;
         }
         board[(int)end] = (player) ? 1 : -1;
         board[(int)start] -= (player) ? 1 : -1;
     }
+    return true;
 }
 
 void undo_move() {
@@ -290,8 +296,8 @@ int main()
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
                     if(execute_move(p_selected, selected, player_side)) {
                         player_side = !player_side;
-                        selected = (char)-1;
                     }
+                    selected = (char)-1;
                 }
                 p_selected = selected;
             }
