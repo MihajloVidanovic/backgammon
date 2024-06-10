@@ -227,6 +227,47 @@ void write_binary(void* _ptr, int size) {
     std::cout << std::endl;
 }
 
+/*
+
+// initial call
+minimax(Move m, 3, -127, 127, true)
+
+// im gonna need static evaluation too
+
+NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizingPlayer)
+{
+    if(depth == 0 || end_check()) {
+        return static_eval();
+    }
+
+    if(maximizingPlayer) {
+        char maxEval = -infinity
+        for each child of position {
+            eval = minimax(child, depth - 1, alpha, beta, false)
+            maxEval = max(maxEval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha {
+                break;
+            }
+        }
+        return maxEval
+    }
+    else {
+        minEval = +infinity
+        for each child of position {
+            eval = minimax(child, depth - 1, alpha, beta, false)
+            minEval = min(minEval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha {
+                break;
+            }
+        }
+        return minEval
+    }
+}
+
+*/
+
 void draw_pieces(Texture2D sheet, char selected);
 
 int main()
@@ -360,11 +401,14 @@ void draw_pieces(Texture2D sheet, char selected) {
                 case 4:
                 case 5:
                 case 6:
-                    for(int j = 0; j < abs(board[i]); j++) {
+                    for(int j = 0; j < min(abs(board[i]), 5); j++) {
                         if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                         else {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
+                    }
+                    for(int j = 5; j < min(abs(board[i]), 5); j++) {
+                        
                     }
                     if((int)selected == i && abs(board[i]) > 0) {
                         DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - (abs(board[i]) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
