@@ -4,6 +4,7 @@
 #include <random>
 #include <vector>
 #include <chrono>
+#include <map>
 
 typedef enum Mode { 
     player_move = 0, computer_thinking = 1, computer_move = 2, title_screen = 3, paused = 4, first_dice_throw = 5
@@ -118,7 +119,7 @@ class Move {
             return eval;
         }
 
-    AI has been scrapped, finish by the end of this year maybe.
+    AI has been scrapped for now, finish by the end of this year maybe.
 
 };*/
 
@@ -127,6 +128,10 @@ int sign(char c) {
         return -1;
     }
     return 1;
+}
+
+bool check_move(char start, char end, bool player) {
+    
 }
 
 void execute_move(Move _move) {
@@ -270,8 +275,15 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
-std::vector<Move> get_possible_moves() {
-    
+std::map<Move, char> get_possible_moves(int d1, int d2) {
+    for(int i = 0; i < 26; i++) {
+        if(sign(board[i]) == -1) {
+            
+        }
+        else {
+            
+        }
+    }
 }
 
 void draw_pieces(Texture2D sheet, char selected);
@@ -294,6 +306,7 @@ int main()
     std::string black = "Black to play", white = "White to play"; // 624
     
     int d1 = rand() % 6, d2 = rand() % 6;
+    int dd1 = d1, dd2 = d2;
     
     Mode m = player_move;
     
@@ -302,6 +315,7 @@ int main()
             if(IsKeyPressed(KEY_SPACE) && !dice_rolled) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&d1, &d2);
+                dd1 = d1; dd2 = d2;
                 dice_rolled = true;
             }
             if(IsMouseButtonPressed(0)) {
@@ -309,11 +323,13 @@ int main()
                 if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&d1, &d2);
+                    dd1 = d1; dd2 = d2;
                     dice_rolled = true;
                 }
                 else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&d1, &d2);
+                    dd1 = d1; dd2 = d2;
                     dice_rolled = true;
                 }
                 
@@ -383,8 +399,14 @@ int main()
                 // background
                 DrawTexturePro(spritesheet, (Rectangle){48, 0, 160, 128}, (Rectangle){0, 0, 640, 512}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                 
-                DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                // dice
+                DrawTexturePro(spritesheet, dice_rects[dd1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                DrawTexturePro(spritesheet, dice_rects[dd2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                
+                // arrow
+                if(!dice_rolled) {
+                    DrawTexturePro(spritesheet, (Rectangle){12, 86, 12, 10}, (Rectangle){168, 32, 48, 40}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); // 360, 32
+                }
                 
                 // to move
                 if(player_side) {
