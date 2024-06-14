@@ -71,7 +71,7 @@ class Move {
         }
 };
 
-class Node {
+/*class Node {
 
     private:
         Node* parent;
@@ -93,7 +93,7 @@ class Node {
         Node* get_child(int index) {
             return children[index];
         }
-        /*void make_child() {
+        void make_child() {
             children.resize(children.size() + 1); // new child always at end
             children[children.size()-1].parent = this;
         }
@@ -106,7 +106,7 @@ class Node {
 
         void set_parent(Node* _parent) {
             parent = _parent;
-        }*/
+        }
         Node* get_parent() {
             return parent;
         }
@@ -118,8 +118,9 @@ class Node {
             return eval;
         }
 
+    AI has been scrapped, finish by the end of this year maybe.
 
-};
+};*/
 
 int sign(char c) {
     if(c < 0) {
@@ -269,6 +270,10 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
+std::vector<Move> get_possible_moves() {
+    
+}
+
 void draw_pieces(Texture2D sheet, char selected);
 
 int main()
@@ -284,6 +289,9 @@ int main()
     char selected = (char)0, p_selected = (char)-1;
     
     bool player_side = false;
+    bool dice_rolled = false;
+    
+    std::string black = "Black to play", white = "White to play"; // 624
     
     int d1 = rand() % 6, d2 = rand() % 6;
     
@@ -291,21 +299,31 @@ int main()
     
     while(!WindowShouldClose()) {
         if(m == player_move) {
+            if(IsKeyPressed(KEY_SPACE) && !dice_rolled) {
+                // d1 = rand() % 6, d2 = rand() % 6; // roll dice
+                roll_dice(&d1, &d2);
+                dice_rolled = true;
+            }
             if(IsMouseButtonPressed(0)) {
                 int m_x = GetMouseX(), m_y = GetMouseY();
-                if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76) {
+                if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&d1, &d2);
+                    dice_rolled = true;
                 }
-                else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76) {
+                else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&d1, &d2);
+                    dice_rolled = true;
                 }
+                
+                if(!dice_rolled) { goto label1; }
                 
                 // move selection
                 if(p_selected != (char)-1) {
                     p_selected = selected;
                 }
+                // board selection
                 if(32 < m_x && m_x < 220 && 116 < m_y && m_y < 464) {
                     if(m_y < 288) {
                         // 13-18
@@ -332,21 +350,31 @@ int main()
                         }
                     }
                 }
+                // middle of the board
+                else if(236 <= m_x && 116 <= m_y && m_x <= 299 && m_y <= 275) {
+                    // 0
+                    selected = (char)0;
+                }
+                else if(236 <= m_x && 308 <= m_y && m_x <= 299 && m_y <= 467) {
+                    // 25
+                    selected = (char)25;
+                }
+                // the homes
+                // else if()
+                
                 if(p_selected == selected && p_selected != (char)-1) { // clicked out of bounds
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
                     if(execute_move(p_selected, selected, player_side)) {
                         player_side = !player_side;
+                        dice_rolled = false;
                     }
                     selected = (char)-1;
                 }
                 p_selected = selected;
             }
-            if(IsKeyPressed(KEY_SPACE)) {
-                // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-                roll_dice(&d1, &d2);
-            }
+            label1:
             
             BeginDrawing();
             
@@ -357,6 +385,14 @@ int main()
                 
                 DrawTexturePro(spritesheet, dice_rects[d1], (Rectangle){36, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                 DrawTexturePro(spritesheet, dice_rects[d2], (Rectangle){100, 28, 48, 48}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                
+                // to move
+                if(player_side) {
+                    DrawText(white.c_str(), 600 - MeasureText(white.c_str(), 32), 35, 32, (Color){249, 245, 235, 255});
+                }
+                else {
+                    DrawText(black.c_str(), 600 - MeasureText(black.c_str(), 32), 35, 32, (Color){75, 61, 107, 255});
+                }
                 
                 // draw pieces
                 draw_pieces(spritesheet, selected);
@@ -402,6 +438,7 @@ void draw_pieces(Texture2D sheet, char selected) {
                 case 4:
                 case 5:
                 case 6:
+                // FIX
                     for(int j = 0; j < std::min(abs(board[i]), 5); j++) {
                         if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
@@ -409,7 +446,7 @@ void draw_pieces(Texture2D sheet, char selected) {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
                     if((int)selected == i && abs(board[i]) > 0) {
-                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - (std::min(abs(board[i]), 5) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                        DrawRectangleLinesEx((Rectangle){(float)(312 + abs(6 - i) * 32), (float)(436 - (std::min(abs(board[i]), 5) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
                     }
                     break;
                 case 7:
@@ -418,6 +455,7 @@ void draw_pieces(Texture2D sheet, char selected) {
                 case 10:
                 case 11:
                 case 12:
+                // FIX
                     for(int j = 0; j < std::min(abs(board[i]), 5); j++) {
                         if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
@@ -425,7 +463,7 @@ void draw_pieces(Texture2D sheet, char selected) {
                             DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
                     }
                     if((int)selected == i && abs(board[i]) > 0) {
-                        DrawRectangleLinesEx((Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - std::min(abs(board[i]), 5) - 1) * 32, 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                        DrawRectangleLinesEx((Rectangle){(float)(32 + abs(12 - i) * 32), (float)(436 - (std::min(abs(board[i]), 5) - 1) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
                     }
                     break;
                 case 13:
