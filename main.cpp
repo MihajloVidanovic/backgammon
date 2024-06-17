@@ -131,13 +131,22 @@ int sign(char c) {
 }
 
 bool check_move(char start, char end, bool player, int d) {
-    if(start == (char)26 || start == (char)27 || end == (char)0 || end == (char)26) {
+    if(start == (char)26 || start == (char)27 || end == (char)0 || end == (char)25) {
         return false; // cant start at end
     }
-    if(start != (char)((player) ? 0 : 26) && board[((player) ? 0 : 26)] > 0) {
+    if(start != (char)((player) ? 0 : 25) && board[((player) ? 0 : 25)] != 0) {
         return false;
     }
-    if((int)end - (int)start != d * ((player) ? 1 : -1)) {
+    if((int)end == ((player) ? 26 : 27)) {
+        if((char)start - ((player) ? 0 : 23) == d + 1) {
+            return true; // ngl trve....
+        }
+        else {
+            // TODO: add bear off logic
+            return false;
+        }
+    }
+    if((int)end - (int)start != (d + 1) * ((player) ? 1 : -1)) {
         return false;
     }
     return true;
@@ -152,6 +161,7 @@ bool execute_move(char start, char end, bool player, int* d, int d_size) {
             if(check_move(start, end, player, *(d + i)) && *(d + i) != -1) {
                 board[(int)end] += (player) ? 1 : -1;
                 board[(int)start] -= (player) ? 1 : -1;
+                *(d + i) = -1;
                 goto label3;
             }
         }
@@ -292,7 +302,7 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
-std::map<Move, char> get_possible_moves(int d1, int d2) {
+/*std::map<Move, char> get_possible_moves(int d1, int d2) {
     for(int i = 0; i < 26; i++) {
         if(sign(board[i]) == -1) {
             
@@ -301,7 +311,7 @@ std::map<Move, char> get_possible_moves(int d1, int d2) {
             
         }
     }
-}
+}*/
 
 void draw_pieces(Texture2D sheet, char selected);
 
@@ -485,7 +495,6 @@ void draw_pieces(Texture2D sheet, char selected) {
                 case 4:
                 case 5:
                 case 6:
-                // FIX
                     for(int j = 0; j < std::min(abs(board[i]), 5); j++) {
                         if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(312 + abs(i - 6) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
@@ -502,7 +511,6 @@ void draw_pieces(Texture2D sheet, char selected) {
                 case 10:
                 case 11:
                 case 12:
-                // FIX
                     for(int j = 0; j < std::min(abs(board[i]), 5); j++) {
                         if((int)board[i] > 0) {
                             DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)(32 + abs(i - 12) * 32), (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE); }
