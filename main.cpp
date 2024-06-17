@@ -130,37 +130,33 @@ int sign(char c) {
     return 1;
 }
 
-bool check_move(char start, char end, bool player) {
-    
+bool check_move(char start, char end, bool player, int d) {
+    if(start == (char)26 || start == (char)27 || end == (char)0 || end == (char)26) {
+        return false; // cant start at end
+    }
+    if(start != (char)((player) ? 0 : 26) && board[((player) ? 0 : 26)] > 0) {
+        return false;
+    }
+    if((int)end - (int)start != d * ((player) ? 1 : -1)) {
+        return false;
+    }
+    return true;
 }
 
-void execute_move(Move _move) {
-    char start, end;
-    bool taken, player;
-    _move.read_move(&start, &end, &taken, &player);
-    if(board[(int)end] == 0) {
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-    else if(sign(board[(int)end]) != ((player) ? 1 : -1)) {
-        if(sign(board[(int)end]) == -1) {
-            board[25]--;
-        }
-        else { // 1
-            board[0]++;
-        }
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
-    }
-}
-
-bool execute_move(char start, char end, bool player) {
+bool execute_move(char start, char end, bool player, int* d, int d_size) {
     if(board[(int)start] == 0) { return false; }
     
     // normal variation
     if((board[(int)end] == 0) || (sign(board[(int)end]) == ((player) ? 1 : -1))) {
-        board[(int)end] += (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
+        for(int i = 0; i < d_size; i++) {
+            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1) {
+                board[(int)end] += (player) ? 1 : -1;
+                board[(int)start] -= (player) ? 1 : -1;
+                goto label3;
+            }
+        }
+        return false;
+        label3: ;
     }
     // there is an element at the end
     else if(sign(board[(int)end]) != ((player) ? 1 : -1)) {
@@ -168,14 +164,22 @@ bool execute_move(char start, char end, bool player) {
             return false;
         }
 
-        if(sign(board[(int)end]) == -1) { // send to bar
-            board[25]--;
+        for(int i = 0; i < d_size; i++) {
+            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1) {
+                if(sign(board[(int)end]) == -1) { // send to bar
+                    board[25]--;
+                }
+                else { // 1 send to bar
+                    board[0]++;
+                }
+                board[(int)end] = (player) ? 1 : -1;
+                board[(int)start] -= (player) ? 1 : -1;
+                *(d + i) = -1;
+                goto label2;
+            }
         }
-        else { // 1 send to bar
-            board[0]++;
-        }
-        board[(int)end] = (player) ? 1 : -1;
-        board[(int)start] -= (player) ? 1 : -1;
+        return false;
+        label2: ;
     }
     return true;
 }
@@ -184,13 +188,26 @@ void undo_move() {
     // TODO
 }
 
-void roll_dice(int* d1, int* d2) {
+void roll_dice(int* d, int* d_size) {
     std::random_device rd;     // Only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
     std::uniform_int_distribution<int> uni(0, 5); // Guaranteed unbiased
 
-    *d1 = uni(rng);
-    *d2 = uni(rng);
+    int d1 = uni(rng);
+    int d2 = uni(rng);
+    if(d1 == d2) {
+        for(int i = 0; i < 4; i++) {
+            *(d + i) = d1;
+        }
+        *d_size = 4;
+    }
+    else {
+        *d = d1;
+        *(d + 1) = d2;
+        *(d + 2) = -1;
+        *(d + 3) = -1;
+        *d_size = 2;
+    }
 }
 
 bool get_binary_digit(void* _ptr, int _pos) { // _pos in bits
@@ -305,8 +322,10 @@ int main()
     
     std::string black = "Black to play", white = "White to play"; // 624
     
-    int d1 = rand() % 6, d2 = rand() % 6;
-    int dd1 = d1, dd2 = d2;
+    int dice[4];
+    int d_size;
+    roll_dice(&dice[0], &d_size);
+    int dd1 = dice[0], dd2 = dice[1];
     
     Mode m = player_move;
     
@@ -314,22 +333,22 @@ int main()
         if(m == player_move) {
             if(IsKeyPressed(KEY_SPACE) && !dice_rolled) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-                roll_dice(&d1, &d2);
-                dd1 = d1; dd2 = d2;
+                roll_dice(&dice[0], &d_size);
+                    dd1 = dice[0]; dd2 = dice[1];
                 dice_rolled = true;
             }
             if(IsMouseButtonPressed(0)) {
                 int m_x = GetMouseX(), m_y = GetMouseY();
                 if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-                    roll_dice(&d1, &d2);
-                    dd1 = d1; dd2 = d2;
+                    roll_dice(&dice[0], &d_size);
+                    dd1 = dice[0]; dd2 = dice[1];
                     dice_rolled = true;
                 }
                 else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
-                    roll_dice(&d1, &d2);
-                    dd1 = d1; dd2 = d2;
+                    roll_dice(&dice[0], &d_size);
+                    dd1 = dice[0]; dd2 = dice[1];
                     dice_rolled = true;
                 }
                 
@@ -382,9 +401,15 @@ int main()
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
-                    if(execute_move(p_selected, selected, player_side)) {
+                    if(execute_move(p_selected, selected, player_side, &dice[0], d_size)) {
+                        for(int i = 0; i < 4; i++) {
+                            if(dice[i] != -1) {
+                                goto label4;
+                            }
+                        }
                         player_side = !player_side;
                         dice_rolled = false;
+                        label4: ;
                     }
                     selected = (char)-1;
                 }
