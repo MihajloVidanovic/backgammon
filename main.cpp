@@ -14,7 +14,7 @@ const Color bg_color = (Color){78, 40, 46, 255};
 
 // Starting position
 char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
-                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
+                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, -10, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
     (Rectangle){2, 42, 12, 12},
@@ -325,7 +325,7 @@ int main()
     
     Texture2D spritesheet = LoadTexture("assets/spritesheet.png");
     
-    char selected = (char)0, p_selected = (char)-1;
+    char selected = (char)-1, p_selected = (char)-1;
     
     bool player_side = false;
     bool dice_rolled = false;
@@ -466,6 +466,8 @@ int main()
         }
     }
     
+    UnloadTexture(spritesheet);
+    
     CloseWindow();
     return 0;
 }
@@ -475,19 +477,15 @@ void draw_pieces(Texture2D sheet, char selected) {
         if(board[i] != 0) {
             switch(i) {
                 case 0:
-                    if(abs((int)board[i]) > 5) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)236, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)268, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
+                    for(int j = 0; j < std::min(5, abs(board[i])); j++) {
+                        DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)236, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                     }
-                    else {
-                        for(int j = 0; j < abs(board[i]); j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)236, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } // normal variation
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 5); j++) {
+                        DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)268, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)((abs(board[i]) > 5) ? 268 : 236), (float)(116 + ((abs(board[i]) - 1) % 5) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                    }
                     break;
                 case 1:
                 case 2:
@@ -554,69 +552,39 @@ void draw_pieces(Texture2D sheet, char selected) {
                     }
                     break;
                 case 25:
-                    if(abs((int)board[i]) > 5) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)236, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)268, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
+                    for(int j = 0; j < std::min(5, abs(board[i])); j++) {
+                        DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)236, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                     }
-                    else {
-                        for(int j = 0; j < abs(board[i]); j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)236, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } // normal variation
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 5); j++) {
+                        DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)268, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
+                    if((int)selected == i && abs(board[i]) > 0) {
+                        DrawRectangleLinesEx((Rectangle){(float)((abs(board[i]) > 5) ? 268 : 236), (float)(436 - ((abs(board[i]) - 1) % 5) * 32), 32, 32}, 4.0, (Color){255, 255, 0, 200});
+                    }
                     break;
                 case 26:
                     // 516 116
-                    if(abs((int)board[i]) > 10) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)516, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)548, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 10; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)580, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
+                    for(int j = 0; j < std::min(5, abs(board[i])); j++) {
+                        DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)516, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                     }
-                    else if(abs((int)board[i]) > 5) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)516, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)548, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } 
-                    else {
-                        for(int j = 0; j < abs(board[i]); j++) {
-                            DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)516, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } // normal variation
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 5); j++) {
+                        DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)548, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 10); j++) {
+                        DrawTexturePro(sheet, (Rectangle){40, 104, 8, 8}, (Rectangle){(float)580, (float)(116 + j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
                     break;
                 case 27:
                     // 516 116
-                    if(abs((int)board[i]) > 10) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)516, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)548, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 10; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)580, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
+                    for(int j = 0; j < std::min(5, abs(board[i])); j++) {
+                        DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)516, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
                     }
-                    else if(abs((int)board[i]) > 5) {
-                        for(int j = 0; j < 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)516, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                        for(int j = 0; j < abs(board[i]) - 5; j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)548, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } 
-                    else {
-                        for(int j = 0; j < abs(board[i]); j++) {
-                            DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)516, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
-                        }
-                    } // normal variation
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 5); j++) {
+                        DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)548, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
+                    for(int j = 0; j < std::min(5, abs(board[i]) - 10); j++) {
+                        DrawTexturePro(sheet, (Rectangle){32, 104, 8, 8}, (Rectangle){(float)580, (float)(436 - j * 32), 32, 32}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                    }
                     break;
             }
         }
