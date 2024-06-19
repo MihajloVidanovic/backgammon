@@ -86,11 +86,12 @@ class Move {
                 tmp >>= 1;
             }
         }
-        unsigned short get_raw_data() {
-            return data;
-        }
-        bool operator==(Move const& move1) {
-            if(data == move1.get_raw_data()) {
+        bool operator==(Move move1) {
+            char start1, start2, end1, end2;
+            bool taken1, taken2, player1, player2;
+            this->read_move(&start1, &end1, &taken1, &player1);
+            move1.read_move(&start2, &end2, &taken2, &player2);
+            if(start1 == start2 && end1 == end2 && taken1 == taken2 && player1 == player2) {
                 return true;
             }
             return false;
@@ -155,9 +156,9 @@ int sign(char c) {
     return 1;
 }
 
-bool check_move(char start, char end, bool player, int d, const std::vector<Move>& available_moves) {
+bool check_move(char start, char end, bool player, std::vector<Move>& available_moves) {
     Move move1(start, end, board[(int)end] == ((player) ? -1 : 1), player);
-    for(int i = 0; i < available_moves.size(); i++) {
+    for(int i = 0; i < (int)available_moves.size(); i++) {
         if(available_moves[i] == move1) {
             return true;
         }
@@ -187,13 +188,13 @@ bool check_move(char start, char end, bool player, int d, const std::vector<Move
     */
 }
 
-bool execute_move(char start, char end, bool player, int* d, int d_size, const std::vector<Move>& available_moves) {
+bool execute_move(char start, char end, bool player, int* d, int d_size, std::vector<Move>& available_moves) {
     if(board[(int)start] == 0) { return false; }
     
     // normal variation
     if((board[(int)end] == 0) || (sign(board[(int)end]) == ((player) ? 1 : -1))) {
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, *(d + i), available_moves) && *(d + i) != -1) {
+            if(check_move(start, end, player, available_moves) && *(d + i) != -1) {
                 board[(int)end] += (player) ? 1 : -1;
                 board[(int)start] -= (player) ? 1 : -1;
                 *(d + i) = -1;
@@ -210,7 +211,7 @@ bool execute_move(char start, char end, bool player, int* d, int d_size, const s
         }
 
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1, available_moves) {
+            if(check_move(start, end, player, available_moves)) {
                 if(sign(board[(int)end]) == -1) { // send to bar
                     board[25]--;
                 }
@@ -403,9 +404,16 @@ int main()
     roll_dice(&dice[0], &d_size);
     int dd1 = dice[0], dd2 = dice[1];
     
+    char start, end;
+    bool taken, player;
+    
     Mode m = player_move;
     
     std::vector<Move> available_moves = get_possible_moves(&dice[0], d_size, player_side);
+    for(int i = 0; i < available_moves.size(); i++) {
+        available_moves[i].read_move(&start, &end, &taken, &player);
+        std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << std::endl;
+    }
     
     while(!WindowShouldClose()) {
         if(m == player_move) {
@@ -479,7 +487,7 @@ int main()
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
-                    if(execute_move(p_selected, selected, player_side, &dice[0], d_size), player_side) {
+                    if(execute_move(p_selected, selected, player_side, &dice[0], d_size, available_moves)) {
                         for(int i = 0; i < 4; i++) {
                             if(dice[i] != -1) {
                                 goto label4;
@@ -487,7 +495,7 @@ int main()
                         }
                         player_side = !player_side;
                         dice_rolled = false;
-                        available_moves = get_possible_moves(&dice[0], d_size, player_side)
+                        available_moves = get_possible_moves(&dice[0], d_size, player_side);
                         label4: ;
                     }
                     selected = (char)-1;
