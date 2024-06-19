@@ -13,7 +13,7 @@ const Color bg_color = (Color){78, 40, 46, 255};
 
 // Starting position
 char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
-                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, -10, 0, 0};
+                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
     (Rectangle){2, 42, 12, 12},
@@ -37,6 +37,23 @@ class Move {
         // bit 9: whether a piece has been taken
         // bit 10: what player is making the move, 0 for black 1 for white
         
+        // constructors
+        Move() { }
+        Move(char start, char end, bool taken, bool player) {
+            for(int i = 0; i < 5; i++) {
+                data += start & 1;
+                data <<= 1;
+                start >>= 1;
+            }
+            for(int i = 0; i < 5; i++) {
+                data += start & 1;
+                data <<= 1;
+                start >>= 1;
+            }
+            data += (taken) ? 1 : 0;
+            data <<= 1;
+            data += (player) ? 1 : 0;
+        }
         void write_move(char start, char end, bool taken, bool player) {
             for(int i = 0; i < 5; i++) {
                 data += start & 1;
@@ -68,6 +85,15 @@ class Move {
                 *start <<= 1;
                 tmp >>= 1;
             }
+        }
+        unsigned short get_raw_data() {
+            return data;
+        }
+        bool operator==(Move const& move1) {
+            if(data == move1.get_raw_data()) {
+                return true;
+            }
+            return false;
         }
 };
 
@@ -129,7 +155,16 @@ int sign(char c) {
     return 1;
 }
 
-bool check_move(char start, char end, bool player, int d) {
+bool check_move(char start, char end, bool player, int d, const std::vector<Move>& available_moves) {
+    Move move1(start, end, board[(int)end] == ((player) ? -1 : 1), player);
+    for(int i = 0; i < available_moves.size(); i++) {
+        if(available_moves[i] == move1) {
+            return true;
+        }
+    }
+    return false;
+    
+    /*
     if(start == (char)26 || start == (char)27 || end == (char)0 || end == (char)25) {
         return false; // cant start at end
     }
@@ -149,15 +184,16 @@ bool check_move(char start, char end, bool player, int d) {
         return false;
     }
     return true;
+    */
 }
 
-bool execute_move(char start, char end, bool player, int* d, int d_size) {
+bool execute_move(char start, char end, bool player, int* d, int d_size, const std::vector<Move>& available_moves) {
     if(board[(int)start] == 0) { return false; }
     
     // normal variation
     if((board[(int)end] == 0) || (sign(board[(int)end]) == ((player) ? 1 : -1))) {
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1) {
+            if(check_move(start, end, player, *(d + i), available_moves) && *(d + i) != -1) {
                 board[(int)end] += (player) ? 1 : -1;
                 board[(int)start] -= (player) ? 1 : -1;
                 *(d + i) = -1;
@@ -174,7 +210,7 @@ bool execute_move(char start, char end, bool player, int* d, int d_size) {
         }
 
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1) {
+            if(check_move(start, end, player, *(d + i)) && *(d + i) != -1, available_moves) {
                 if(sign(board[(int)end]) == -1) { // send to bar
                     board[25]--;
                 }
@@ -301,31 +337,46 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
-std::set<Move> get_possible_moves(int* d, int d_size, bool player) {
-    std::set<Move> return_set;
+bool check_for_bearoff(bool player) {
+    int sum = board[((player) ? 26 : 27)];
+    for(int i = ((player) ? 19 : 1); i <= ((player) ? 24 : 6); i++) {
+        if(sign(board[i]) == ((player) ? 1 : -1)) {
+            sum += board[i];
+        }
+    }
+    if(abs(sum) == 15) {
+        return true;
+    }
+    return false;
+}
+
+std::vector<Move> get_possible_moves(int* d, int d_size, bool player) {
+    std::vector<Move> return_vector;
     Move move1;
     for(int i = 0; i < 26; i++) {
         if(sign(board[i]) == ((player) ? 1 : -1) && board[i] != 0) {
-            for(int j = 0; j < d_size; j++) {
+            for(int j = 0; j < (*d != *(d + 1) ? d_size : 1); j++) {
 
                 // general board
                 if(*(d + j) == -1 || !(i - ((player) ? -1 : 1) * (*(d + j)) > 0 && i - ((player) ? -1 : 1) * (*(d + j)) < 25)) {
                     continue;
                 }
                 if(board[i - ((player) ? -1 : 1) * (*(d + j))] == 0 || sign(board[i - ((player) ? -1 : 1) * (*(d + j))]) == ((player) ? 1 : -1) || abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) {
-                    move1.write_move((char)i, (char)(i - ((player) ? -1 : 1) * (*(d + j))), (((sign(board[i - ((player) ? -1 : 1) * (*(d + j))])) != ((player) ? 1 : -1)) ? true : false), false);
-                    // return_set.insert(move1);
-                }
-
-                // home row
-                if(board[*(d + j)] < 0) { 
-                    move1.write_move((char)(*(d + j)), (char)27, false, false);
-                    // return_set.insert(move1);
+                    move1.write_move((char)i, (char)(i - ((player) ? -1 : 1) * (*(d + j))), (((sign(board[i - ((player) ? -1 : 1) * (*(d + j))])) != ((player) ? 1 : -1) && abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) ? true : false), false);
+                    return_vector.push_back(move1);
                 }
             }
         }
     }
-    return return_set;
+    
+    // home row
+    for(int i = 0; i < (*d != *(d + 1) ? d_size : 1); i++) {  
+        if(sign(board[((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0)]) ==  ((player) ? 1 : -1) && check_for_bearoff(player)) { 
+            move1.write_move(((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0), ((player) ? 26 : 27), false, player);
+            return_vector.push_back(move1);
+        }
+    }
+    return return_vector;
 }
 
 void draw_pieces(Texture2D sheet, char selected);
@@ -353,6 +404,8 @@ int main()
     int dd1 = dice[0], dd2 = dice[1];
     
     Mode m = player_move;
+    
+    std::vector<Move> available_moves = get_possible_moves(&dice[0], d_size, player_side);
     
     while(!WindowShouldClose()) {
         if(m == player_move) {
@@ -426,7 +479,7 @@ int main()
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
-                    if(execute_move(p_selected, selected, player_side, &dice[0], d_size)) {
+                    if(execute_move(p_selected, selected, player_side, &dice[0], d_size), player_side) {
                         for(int i = 0; i < 4; i++) {
                             if(dice[i] != -1) {
                                 goto label4;
@@ -434,6 +487,7 @@ int main()
                         }
                         player_side = !player_side;
                         dice_rolled = false;
+                        available_moves = get_possible_moves(&dice[0], d_size, player_side)
                         label4: ;
                     }
                     selected = (char)-1;
