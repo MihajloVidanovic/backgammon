@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
-#include <chrono>
-#include <map>
+#include <set>
 
 typedef enum Mode { 
     player_move = 0, computer_thinking = 1, computer_move = 2, title_screen = 3, paused = 4, first_dice_throw = 5
@@ -302,16 +301,32 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
-/*std::map<Move, char> get_possible_moves(int d1, int d2) {
+std::set<Move> get_possible_moves(int* d, int d_size) {
+    std::set<Move> return_set;
+    Move move1;
     for(int i = 0; i < 26; i++) {
-        if(sign(board[i]) == -1) {
-            
+        if(sign(board[i]) == -1) { // black piece
+            for(int j = 0; j < d_size; j++) {
+
+                // general board
+                if(*(d + j) == -1 || !(i - *(d + j) > 0 && i - *(d + j) < 25)) {
+                    continue;
+                }
+                move1.write_move((char)i, (char)(i - *(d + j)), ((board[i - *(d + j)] != 0) ? true : false), false);
+                return_set.insert(move1);
+
+                // home row
+                if(board[*(d + j)] < 0) { 
+                    move1.write_move((char)(*(d + j)), (char)27, false, false);
+                    return_set.insert(move1);
+                }
+            }
         }
-        else {
+        else { // white piece
             
         }
     }
-}*/
+}
 
 void draw_pieces(Texture2D sheet, char selected);
 
