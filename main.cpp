@@ -32,18 +32,18 @@ typedef struct Vector2i {
 class Move {
     public:
         unsigned short data;
-        // bits 0-3: starting position
-        // bits 4-7: ending position
-        // bit 8: whether a piece has been taken
-        // bit 9: what player is making the move, 0 for black 1 for white
+        // bits 0-4: starting position
+        // bits 5-8: ending position
+        // bit 9: whether a piece has been taken
+        // bit 10: what player is making the move, 0 for black 1 for white
         
         void write_move(char start, char end, bool taken, bool player) {
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < 5; i++) {
                 data += start & 1;
                 data <<= 1;
                 start >>= 1;
             }
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < 5; i++) {
                 data += start & 1;
                 data <<= 1;
                 start >>= 1;
@@ -58,12 +58,12 @@ class Move {
             tmp >>= 1;
             *taken = (tmp & 1) ? true : false;
             tmp >>= 1;
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < 5; i++) {
                 *end += tmp & 1;
                 *end <<= 1;
                 tmp >>= 1;
             }
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < 5; i++) {
                 *start += tmp & 1;
                 *start <<= 1;
                 tmp >>= 1;
@@ -301,31 +301,31 @@ NewStruct minimax(Move m, char depth, double alpha, double beta, bool maximizing
 
 */
 
-std::set<Move> get_possible_moves(int* d, int d_size) {
+std::set<Move> get_possible_moves(int* d, int d_size, bool player) {
     std::set<Move> return_set;
     Move move1;
     for(int i = 0; i < 26; i++) {
-        if(sign(board[i]) == -1) { // black piece
+        if(sign(board[i]) == ((player) ? 1 : -1) && board[i] != 0) {
             for(int j = 0; j < d_size; j++) {
 
                 // general board
-                if(*(d + j) == -1 || !(i - *(d + j) > 0 && i - *(d + j) < 25)) {
+                if(*(d + j) == -1 || !(i - ((player) ? -1 : 1) * (*(d + j)) > 0 && i - ((player) ? -1 : 1) * (*(d + j)) < 25)) {
                     continue;
                 }
-                move1.write_move((char)i, (char)(i - *(d + j)), ((board[i - *(d + j)] != 0) ? true : false), false);
-                return_set.insert(move1);
+                if(board[i - ((player) ? -1 : 1) * (*(d + j))] == 0 || sign(board[i - ((player) ? -1 : 1) * (*(d + j))]) == ((player) ? 1 : -1) || abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) {
+                    move1.write_move((char)i, (char)(i - ((player) ? -1 : 1) * (*(d + j))), (((sign(board[i - ((player) ? -1 : 1) * (*(d + j))])) != ((player) ? 1 : -1)) ? true : false), false);
+                    // return_set.insert(move1);
+                }
 
                 // home row
                 if(board[*(d + j)] < 0) { 
                     move1.write_move((char)(*(d + j)), (char)27, false, false);
-                    return_set.insert(move1);
+                    // return_set.insert(move1);
                 }
             }
         }
-        else { // white piece
-            
-        }
     }
+    return return_set;
 }
 
 void draw_pieces(Texture2D sheet, char selected);
