@@ -12,8 +12,8 @@ typedef enum Mode {
 const Color bg_color = (Color){78, 40, 46, 255};
 
 // Starting position
-char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
-                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
+char board[28] = {0, -3, -3, -3, -3, -3, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 0, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
     (Rectangle){2, 42, 12, 12},
@@ -31,30 +31,49 @@ typedef struct Vector2i {
 
 class Move {
     public:
-        unsigned short data;
+        // unsigned short data;
         // bits 0-4: starting position
         // bits 5-8: ending position
         // bit 9: whether a piece has been taken
         // bit 10: what player is making the move, 0 for black 1 for white
         
+        char start, end, dice;
+        bool taken, player;
+        
         // constructors
         Move() { }
-        Move(char start, char end, bool taken, bool player) {
-            for(int i = 0; i < 5; i++) {
-                data += start & 1;
-                data <<= 1;
-                start >>= 1;
-            }
-            for(int i = 0; i < 5; i++) {
-                data += start & 1;
-                data <<= 1;
-                start >>= 1;
-            }
-            data += (taken) ? 1 : 0;
-            data <<= 1;
-            data += (player) ? 1 : 0;
+        Move(char _start, char _end, bool _taken, bool _player, char _dice) {
+            start = _start;
+            end = _end;
+            taken = _taken;
+            player = _player;
+            dice = _dice;
         }
-        void write_move(char start, char end, bool taken, bool player) {
+        void write_move(char _start, char _end, bool _taken, bool _player, char _dice) {
+            start = _start;
+            end = _end;
+            taken = _taken;
+            player = _player;
+            dice = _dice;
+        }
+        void read_move(char* _start, char* _end, bool* _taken, bool* _player, char* _dice) {
+            *_start = start;
+            *_end = end;
+            *_taken = taken;
+            *_player = player;
+            *_dice = dice;
+        }
+        bool operator==(Move move1) {
+            char start1, start2, end1, end2, dice1, dice2;
+            bool taken1, taken2, player1, player2;
+            this->read_move(&start1, &end1, &taken1, &player1, &dice1);
+            move1.read_move(&start2, &end2, &taken2, &player2, &dice2);
+            if(start1 == start2 && end1 == end2 && taken1 == taken2 && player1 == player2 && dice1 == dice2) {
+                return true;
+            }
+            return false;
+        }
+        /*void write_move(char start, char end, bool taken, bool player) {
             for(int i = 0; i < 5; i++) {
                 data += start & 1;
                 data <<= 1;
@@ -86,6 +105,9 @@ class Move {
                 tmp >>= 1;
             }
         }
+        unsigned short* data_ptr() {
+            return &data;
+        }
         bool operator==(Move move1) {
             char start1, start2, end1, end2;
             bool taken1, taken2, player1, player2;
@@ -95,7 +117,7 @@ class Move {
                 return true;
             }
             return false;
-        }
+        }*/
 };
 
 /*class Node {
@@ -156,8 +178,8 @@ int sign(char c) {
     return 1;
 }
 
-bool check_move(char start, char end, bool player, std::vector<Move>& available_moves) {
-    Move move1(start, end, board[(int)end] == ((player) ? -1 : 1), player);
+bool check_move(char start, char end, bool player, std::vector<Move>& available_moves, int dice) {
+    Move move1(start, end, board[(int)end] == ((player) ? -1 : 1), player, dice);
     for(int i = 0; i < (int)available_moves.size(); i++) {
         if(available_moves[i] == move1) {
             return true;
@@ -194,7 +216,7 @@ bool execute_move(char start, char end, bool player, int* d, int d_size, std::ve
     // normal variation
     if((board[(int)end] == 0) || (sign(board[(int)end]) == ((player) ? 1 : -1))) {
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, available_moves) && *(d + i) != -1) {
+            if(check_move(start, end, player, available_moves, (*(d + i))) && *(d + i) != -1) {
                 board[(int)end] += (player) ? 1 : -1;
                 board[(int)start] -= (player) ? 1 : -1;
                 *(d + i) = -1;
@@ -211,7 +233,7 @@ bool execute_move(char start, char end, bool player, int* d, int d_size, std::ve
         }
 
         for(int i = 0; i < d_size; i++) {
-            if(check_move(start, end, player, available_moves)) {
+            if(check_move(start, end, player, available_moves, *(d + i))) {
                 if(sign(board[(int)end]) == -1) { // send to bar
                     board[25]--;
                 }
@@ -237,7 +259,7 @@ void undo_move() {
 void roll_dice(int* d, int* d_size) {
     std::random_device rd;     // Only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
-    std::uniform_int_distribution<int> uni(0, 5); // Guaranteed unbiased
+    std::uniform_int_distribution<int> uni(1, 6); // Guaranteed unbiased
 
     int d1 = uni(rng);
     int d2 = uni(rng);
@@ -356,14 +378,17 @@ std::vector<Move> get_possible_moves(int* d, int d_size, bool player) {
     Move move1;
     for(int i = 0; i < 26; i++) {
         if(sign(board[i]) == ((player) ? 1 : -1) && board[i] != 0) {
-            for(int j = 0; j < (*d != *(d + 1) ? d_size : 1); j++) {
+            for(int j = 0; j < d_size; j++) {
 
                 // general board
                 if(*(d + j) == -1 || !(i - ((player) ? -1 : 1) * (*(d + j)) > 0 && i - ((player) ? -1 : 1) * (*(d + j)) < 25)) {
-                    continue;
+                    // do nothing
                 }
-                if(board[i - ((player) ? -1 : 1) * (*(d + j))] == 0 || sign(board[i - ((player) ? -1 : 1) * (*(d + j))]) == ((player) ? 1 : -1) || abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) {
-                    move1.write_move((char)i, (char)(i - ((player) ? -1 : 1) * (*(d + j))), (((sign(board[i - ((player) ? -1 : 1) * (*(d + j))])) != ((player) ? 1 : -1) && abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) ? true : false), false);
+                else if(board[((player) ? 0 : 25)] != 0 && i != ((player) ? 0 : 25)) {
+                    // do nothing, again
+                }
+                else if(board[i - ((player) ? -1 : 1) * (*(d + j))] == 0 || sign(board[i - ((player) ? -1 : 1) * (*(d + j))]) == ((player) ? 1 : -1) || abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) {
+                    move1.write_move((char)i, (char)(i - ((player) ? -1 : 1) * (*(d + j))), (((sign(board[i - ((player) ? -1 : 1) * (*(d + j))])) != ((player) ? 1 : -1) && abs(board[i - ((player) ? -1 : 1) * (*(d + j))]) == 1) ? true : false), player, *(d + j));
                     return_vector.push_back(move1);
                 }
             }
@@ -373,7 +398,7 @@ std::vector<Move> get_possible_moves(int* d, int d_size, bool player) {
     // home row
     for(int i = 0; i < (*d != *(d + 1) ? d_size : 1); i++) {  
         if(sign(board[((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0)]) ==  ((player) ? 1 : -1) && check_for_bearoff(player)) { 
-            move1.write_move(((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0), ((player) ? 26 : 27), false, player);
+            move1.write_move(((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0), ((player) ? 26 : 27), false, player, *(d + i));
             return_vector.push_back(move1);
         }
     }
@@ -402,45 +427,68 @@ int main()
     int dice[4];
     int d_size;
     roll_dice(&dice[0], &d_size);
-    int dd1 = dice[0], dd2 = dice[1];
+    int dd1 = dice[0] - 1, dd2 = dice[1] - 1;
     
-    char start, end;
+    char start, end, m_dice;
     bool taken, player;
     
     Mode m = player_move;
     
     std::vector<Move> available_moves = get_possible_moves(&dice[0], d_size, player_side);
     for(int i = 0; i < available_moves.size(); i++) {
-        available_moves[i].read_move(&start, &end, &taken, &player);
-        std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << std::endl;
+        available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
+        std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
     }
+    std::cout << std::endl;
     
     while(!WindowShouldClose()) {
         if(m == player_move) {
             if(IsKeyPressed(KEY_SPACE) && !dice_rolled) {
                 // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                 roll_dice(&dice[0], &d_size);
-                    dd1 = dice[0]; dd2 = dice[1];
+                dd1 = dice[0] - 1; dd2 = dice[1] - 1;
                 dice_rolled = true;
+                available_moves = get_possible_moves(&dice[0], d_size, player_side);
+                for(int i = 0; i < available_moves.size(); i++) {
+                    available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
+                    std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
+                }
+                std::cout << std::endl;
             }
             if(IsMouseButtonPressed(0)) {
                 int m_x = GetMouseX(), m_y = GetMouseY();
                 if(m_x > 36 && m_x < 80 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&dice[0], &d_size);
-                    dd1 = dice[0]; dd2 = dice[1];
+                    dd1 = dice[0] - 1; dd2 = dice[1] - 1;
                     dice_rolled = true;
+                    available_moves = get_possible_moves(&dice[0], d_size, player_side);
+                    for(int i = 0; i < available_moves.size(); i++) {
+                        available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
+                        std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
+                    }
+                    std::cout << std::endl;
                 }
                 else if(m_x > 100 && m_x < 148 && m_y > 28 && m_y < 76 && !dice_rolled) {
                     // d1 = rand() % 6, d2 = rand() % 6; // roll dice
                     roll_dice(&dice[0], &d_size);
-                    dd1 = dice[0]; dd2 = dice[1];
+                    dd1 = dice[0] - 1; dd2 = dice[1] - 1;
                     dice_rolled = true;
+                    available_moves = get_possible_moves(&dice[0], d_size, player_side);
+                    for(int i = 0; i < available_moves.size(); i++) {
+                        available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
+                        std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
+                    }
+                    std::cout << std::endl;
                 }
                 
                 if(!dice_rolled) { goto label1; }
                 
                 // move selection
+                if(available_moves.size() == 0) {
+                    player_side = !player_side;
+                    dice_rolled = false;
+                }
                 if(p_selected != (char)-1) {
                     p_selected = selected;
                 }
@@ -481,13 +529,28 @@ int main()
                     selected = (char)25;
                 }
                 // the homes
-                // else if()
+                else if(516 <= m_x && 116 <= m_y && m_x <= 608 && m_y <= 272) {
+                    selected = (char)26;
+                }
+                else if(516 <= m_x && 308 <= m_y && m_x <= 608 && m_y <= 464) {
+                    selected = (char)27;
+                }
                 
                 if(p_selected == selected && p_selected != (char)-1) { // clicked out of bounds
                     selected = (char)-1;
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
                     if(execute_move(p_selected, selected, player_side, &dice[0], d_size, available_moves)) {
+                        std::cout << 1 << std::endl;
+                        available_moves = get_possible_moves(&dice[0], d_size, player_side);
+                        for(int i = 0; i < available_moves.size(); i++) {
+                            available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
+                            std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
+                        }
+                        for(int i = 0; i < d_size; i++) {
+                            std::cout << *(dice + i) << ' ';
+                        }
+                        std::cout << std::endl;
                         for(int i = 0; i < 4; i++) {
                             if(dice[i] != -1) {
                                 goto label4;
@@ -495,7 +558,6 @@ int main()
                         }
                         player_side = !player_side;
                         dice_rolled = false;
-                        available_moves = get_possible_moves(&dice[0], d_size, player_side);
                         label4: ;
                     }
                     selected = (char)-1;
