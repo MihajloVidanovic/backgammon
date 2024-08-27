@@ -6,14 +6,14 @@
 #include <set>
 
 typedef enum Mode { 
-    player_move = 0, computer_thinking = 1, computer_move = 2, title_screen = 3, paused = 4, first_dice_throw = 5
+    player_move = 0, computer_thinking = 1, computer_move = 2, title_screen = 3, paused = 4, first_dice_throw = 5, winner_w = 6, winner_b = 7
 } Mode;
 
 const Color bg_color = (Color){78, 40, 46, 255};
 
 // Starting position
-char board[28] = {0, -3, -3, -3, -3, -3, 0, 0, 0, 0, 0, 0, 0, 
-                 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 0, 0, 0};
+char board[28] = {0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, 
+                 -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0};
                  // board[26] = white's end, board[27] = black's end
 Rectangle dice_rects[6] = {
     (Rectangle){2, 42, 12, 12},
@@ -175,7 +175,10 @@ int sign(char c) {
     if(c < 0) {
         return -1;
     }
-    return 1;
+    else if(c > 0) {
+        return 1;
+    }
+    return 2;
 }
 
 bool check_move(char start, char end, bool player, std::vector<Move>& available_moves, int dice) {
@@ -186,28 +189,6 @@ bool check_move(char start, char end, bool player, std::vector<Move>& available_
         }
     }
     return false;
-    
-    /*
-    if(start == (char)26 || start == (char)27 || end == (char)0 || end == (char)25) {
-        return false; // cant start at end
-    }
-    if(start != (char)((player) ? 0 : 25) && board[((player) ? 0 : 25)] != 0) {
-        return false;
-    }
-    if((int)end == ((player) ? 26 : 27)) {
-        if((char)start - ((player) ? 0 : 23) == d + 1) {
-            return true; // ngl trve....
-        }
-        else {
-            // TODO: add bear off logic
-            return false;
-        }
-    }
-    if((int)end - (int)start != (d + 1) * ((player) ? 1 : -1)) {
-        return false;
-    }
-    return true;
-    */
 }
 
 bool execute_move(char start, char end, bool player, int* d, int d_size, std::vector<Move>& available_moves) {
@@ -373,12 +354,22 @@ bool check_for_bearoff(bool player) {
     return false;
 }
 
+char check_for_win() {
+    if(board[26] == 15) {
+        return '1';
+    }
+    else if(board[27] == -15) {
+        return '2';
+    }
+    return '0';
+}
+
 std::vector<Move> get_possible_moves(int* d, int d_size, bool player) {
     std::vector<Move> return_vector;
     Move move1;
     for(int i = 0; i < 26; i++) {
         if(sign(board[i]) == ((player) ? 1 : -1) && board[i] != 0) {
-            for(int j = 0; j < d_size; j++) {
+            for(int j = 0; j < 4; j++) {
 
                 // general board
                 if(*(d + j) == -1 || !(i - ((player) ? -1 : 1) * (*(d + j)) > 0 && i - ((player) ? -1 : 1) * (*(d + j)) < 25)) {
@@ -396,9 +387,9 @@ std::vector<Move> get_possible_moves(int* d, int d_size, bool player) {
     }
     
     // home row
-    for(int i = 0; i < (*d != *(d + 1) ? d_size : 1); i++) {  
-        if(sign(board[((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0)]) ==  ((player) ? 1 : -1) && check_for_bearoff(player)) { 
-            move1.write_move(((player) ? -1 : 1) * (*(d + i)) + ((player) ? 24 : 0), ((player) ? 26 : 27), false, player, *(d + i));
+    for(int i = 0; i < 4; i++) { 
+        if(sign(board[((player) ? -1 : 1) * (*(d + i)) + ((player) ? 25 : 0)]) ==  ((player) ? 1 : -1) && check_for_bearoff(player) && *(d + i) > 0) { 
+            move1.write_move(((player) ? -1 : 1) * (*(d + i)) + ((player) ? 25 : 0), ((player) ? 26 : 27), false, player, *(d + i));
             return_vector.push_back(move1);
         }
     }
@@ -497,7 +488,7 @@ int main()
                     if(m_y < 288) {
                         // 13-18
                         if((board[(m_x - 32) / 32 + 13] * ((player_side) ? 1 : -1) >= 0) || p_selected != (char)-1) {
-                            selected = (m_x - 32) / 32 + 13; // :thumbs_up:
+                            selected = (m_x - 32) / 32 + 13;
                         }
                     }
                     else {
@@ -541,16 +532,20 @@ int main()
                 }
                 else if(p_selected != (char)-1 && p_selected != selected) { // move
                     if(execute_move(p_selected, selected, player_side, &dice[0], d_size, available_moves)) {
-                        std::cout << 1 << std::endl;
                         available_moves = get_possible_moves(&dice[0], d_size, player_side);
                         for(int i = 0; i < available_moves.size(); i++) {
                             available_moves[i].read_move(&start, &end, &taken, &player, &m_dice);
                             std::cout << (int)start << ' ' << (int)end << ' ' << taken << ' ' << player << ' ' << (int)m_dice << std::endl;
                         }
-                        for(int i = 0; i < d_size; i++) {
+                        for(int i = 0; i < 4; i++) {
                             std::cout << *(dice + i) << ' ';
                         }
                         std::cout << std::endl;
+                        if(available_moves.size() == 0) {
+                            player_side = !player_side;
+                            dice_rolled = false;
+                            goto label4;
+                        }
                         for(int i = 0; i < 4; i++) {
                             if(dice[i] != -1) {
                                 goto label4;
@@ -565,6 +560,13 @@ int main()
                 p_selected = selected;
             }
             label1:
+            
+            if(check_for_win() == '1') {
+                m = winner_w;
+            }
+            else if(check_for_win() == '2') {
+                m = winner_b;
+            }
             
             BeginDrawing();
             
